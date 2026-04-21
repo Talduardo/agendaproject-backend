@@ -3,6 +3,7 @@ import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 
 let messaging = null
+let auth = null
 
 export function initFirebase() {
   if (admin.apps.length) return
@@ -17,7 +18,7 @@ export function initFirebase() {
       credential = admin.credential.cert(sa)
       console.log('[Firebase] ✓ Usando serviceAccountKey.json')
     }
-    // Opção B: variáveis de ambiente (Railway / Render)
+    // Opção B: variáveis de ambiente (Render)
     else if (process.env.FIREBASE_PROJECT_ID) {
       credential = admin.credential.cert({
         projectId:   process.env.FIREBASE_PROJECT_ID,
@@ -26,16 +27,23 @@ export function initFirebase() {
       })
       console.log('[Firebase] ✓ Usando variáveis de ambiente')
     } else {
-      console.warn('[Firebase] ⚠ Sem credenciais — push desativado')
+      console.warn('[Firebase] ⚠ Sem credenciais — push e auth desativados')
       return
     }
 
     admin.initializeApp({ credential })
+    
+    // Inicializa os serviços
     messaging = admin.messaging()
+    auth = admin.auth() 
+    
   } catch (err) {
     console.error('[Firebase] Erro ao inicializar:', err.message)
   }
 }
+
+// Exporta as instâncias para uso em outros arquivos (como auth.js)
+export { auth, messaging }
 
 export async function sendPush(token, title, body, data = {}) {
   if (!messaging) return null
